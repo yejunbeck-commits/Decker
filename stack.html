@@ -349,7 +349,6 @@
             cards.forEach((card, index) => {
                 card.style.transition = 'transform var(--transition-smooth), opacity var(--transition-smooth), z-index 0s';
                 
-                // DOM 순서에 철저히 기반하여 z-index를 매번 새롭게 부여합니다.
                 card.style.zIndex = cards.length - index;
                 
                 if (index < MAX_VISIBLE) {
@@ -378,23 +377,23 @@
             topCard.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
             topCard.style.transform = `translateY(40px) scale(1.05)`;
             
-            // 2단계: 화면 아래로 깊숙이 떨어지는 모션
+            // 2단계: 화면 아래로 적당히 가라앉는 모션 (Y값 대폭 축소)
             setTimeout(() => {
                 topCard.style.transition = 'transform 0.6s cubic-bezier(0.65, 0, 0.35, 1)';
-                topCard.style.transform = `translateY(400px) scale(0.85)`;
+                // 400px -> 260px로 수정하여 하강 폭 절제
+                topCard.style.transform = `translateY(180px) scale(0.85)`;
                 
-                // 3단계: 완전히 화면 밖을 벗어나는 시점에 스택의 맨 뒤로 이동 후 재정렬
+                // 3단계: 스택의 맨 뒤로 이동 후 재정렬
                 setTimeout(() => {
                     stackContainer.appendChild(topCard);
                     
-                    // 강제 리플로우를 통해 브라우저가 이동된 요소를 즉시 인식하게 합니다.
                     void topCard.offsetWidth;
                     
                     updateStack(); 
                     
                     setTimeout(() => {
                         isAnimating = false;
-                    }, 600); // 카드가 뒤쪽으로 완전히 미끄러져 올라올 때까지 대기
+                    }, 600); 
                     
                 }, 400); 
             }, 300); 
