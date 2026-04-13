@@ -348,7 +348,6 @@
             
             cards.forEach((card, index) => {
                 card.style.transition = 'transform var(--transition-smooth), opacity var(--transition-smooth), z-index 0s';
-                
                 card.style.zIndex = cards.length - index;
                 
                 if (index < MAX_VISIBLE) {
@@ -373,29 +372,32 @@
             const topCard = cards[0];
             isAnimating = true;
 
-            // 1단계: 카메라 방향으로 튀어나오며 당겨지는 모션
+            // 1단계: 카메라 방향으로 튀어나오며 당겨지는 모션 (0.4초)
             topCard.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
             topCard.style.transform = `translateY(40px) scale(1.05)`;
             
-            // 2단계: 화면 아래로 적당히 가라앉는 모션 (Y값 대폭 축소)
+            // 2단계: 화면 아래로 가라앉는 모션 시작
             setTimeout(() => {
                 topCard.style.transition = 'transform 0.6s cubic-bezier(0.65, 0, 0.35, 1)';
-                // 400px -> 260px로 수정하여 하강 폭 절제
                 topCard.style.transform = `translateY(180px) scale(0.85)`;
                 
-                // 3단계: 스택의 맨 뒤로 이동 후 재정렬
+                // 3단계: 하강 모션(0.6초)이 '완전히' 종료된 직후에만 뒤로 이동 처리
                 setTimeout(() => {
+                    topCard.style.zIndex = '-1';
                     stackContainer.appendChild(topCard);
                     
+                    // 강제 리플로우를 통해 상태를 브라우저에 각인
                     void topCard.offsetWidth;
                     
+                    // 스택을 업데이트하여 카드가 자연스럽게 스르륵 올라가도록 배치
                     updateStack(); 
                     
+                    // 부드러운 전환이 끝날 때까지 대기 후 애니메이션 락 해제
                     setTimeout(() => {
                         isAnimating = false;
-                    }, 600); 
+                    }, 800); 
                     
-                }, 400); 
+                }, 600); // 이전 400ms에서 600ms로 수정하여 간섭 완전 차단
             }, 300); 
         }
     </script>
