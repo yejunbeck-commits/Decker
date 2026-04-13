@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Image Stack</title>
+    <style>
+        :root {
+            --bg-color: #FEFEFE;
+            --text-color: #111111;
+            --card-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            --control-bg: rgba(255, 255, 255, 0.8);
+            --control-border: rgba(0, 0, 0, 0.05);
+            --transition-duration: 0.8s;
+            --transition-smooth: var(--transition-duration) cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        body.dark-mode {
+            --bg-color: #111111;
+            --text-color: #FEFEFE;
+            --card-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            --control-bg: rgba(30, 30, 30, 0.8);
+            --control-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: background-color 0.5s ease;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 40px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            z-index: 100;
+            background: var(--control-bg);
+            padding: 12px 24px;
+            border-radius: 100px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--control-border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            letter-spacing: -0.2px;
+        }
+
+        .control-btn:hover {
+            background: rgba(150, 150, 150, 0.1);
+        }
+
+        .control-btn.active {
+            background: var(--text-color);
+            color: var(--bg-color);
+        }
+
+        .divider {
+            width: 1px;
+            background: var(--control-border);
+            margin: 0 4px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .stack-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            height: 65vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1000px;
+        }
+
+        .card {
+            position: absolute;
+            width: 320px;
+            border-radius: 16px;
+            overflow: hidden;
+            background-color: #fff;
+            box-shadow: var(--card-shadow);
+            transition: transform var(--transition-smooth), z-index 0s;
+            cursor: pointer;
+            transform-origin: bottom center;
+            will-change: transform;
+            opacity: 1; /* 투명도 제거 */
+        }
+
+        .card.ratio-1-1 {
+            aspect-ratio: 1 / 1;
+        }
+
+        .card.ratio-16-9 {
+            aspect-ratio: 16 / 9;
+        }
+
+        .card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+            display: block;
+        }
+
+        .empty-state {
+            position: absolute;
+            text-align: center;
+            opacity: 0.5;
+            font-size: 15px;
+            letter-spacing: -0.3px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="stack-container" id="stackContainer">
+        <div class="empty-state" id="emptyState">Upload images to begin</div>
+    </div>
+
+    <div class="controls">
+        <label class="control-btn" for="fileInput">Upload</label>
+        <input type="file" id="fileInput" multiple accept="image/*">
+        
+        <div class="divider"></div>
+
+        <button class="control-btn active" id="ratio11">1:1</button>
+        <button class="control-btn" id="ratio169">16:9</button>
+        
+        <div class="divider"></div>
+
+        <button class="control-btn" id="themeToggle">Dark</button>
+
+        <div class="divider"></div>
+
+        <button class="control-btn" id="playToggle">Play</button>
+        <button class="control-btn" id="speedControl">CONTROLS: Normal</button>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const stackContainer = document.getElementById('stackContainer');
+        const emptyState = document.getElementById('emptyState');
+        const themeToggle = document.getElementById('themeToggle');
+        const ratio11Btn = document.getElementById('ratio11');
+        const ratio169Btn = document.getElementById('ratio169');
+        const playToggle = document.getElementById('playToggle');
+        const speedControl = document.getElementById('speedControl');
+        
+        let currentRatio = 'ratio-1-1';
+        let isAnimating = false;
+        let isPlaying = false;
+        let autoPlayTimer;
+
+        const speeds = [
+            { label: 'Normal', duration: 0.8, delay: 2000 },
+            { label: 'Fast', duration: 0.5, delay: 1200 },
+            { label: 'Slow', duration: 1.2, delay: 3000 }
+        ];
+        let currentSpeedIndex = 0;
+
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            themeToggle.textContent = document.body.classList.contains('dark-mode') ? 'Light' : 'Dark';
+        });
+
+        ratio11Btn.addEventListener('click', () => setRatio('ratio-1-1', ratio11Btn, ratio169Btn));
+        ratio169Btn.addEventListener('click', () => setRatio('ratio-16-9', ratio169Btn, ratio11Btn));
+
+        function setRatio(ratioClass, activeBtn, inactiveBtn) {
+            currentRatio = ratioClass;
+            activeBtn.classList.add('active');
+            inactiveBtn.classList.remove('active');
+            
+            document.querySelectorAll('.card').forEach(card => {
+                card.classList.remove('ratio-1-1', 'ratio-16-9');
+                card.classList.add(currentRatio);
+            });
+        }
+
+        speedControl.addEventListener('click', () => {
+            currentSpeedIndex = (currentSpeedIndex + 1) % speeds.length;
+            const speedSettings = speeds[currentSpeedIndex];
+            
+            speedControl.textContent = `CONTROLS: ${speedSettings.label}`;
+            document.documentElement.style.setProperty('--transition-duration', `${speedSettings.duration}s`);
+            
+            if (isPlaying) {
+                clearTimeout(autoPlayTimer);
+                scheduleNextCard();
+            }
+        });
+
+        playToggle.addEventListener('click', () => {
+            const cards = document.querySelectorAll('.card');
+            if (cards.length <= 1) return;
+
+            isPlaying = !isPlaying;
+            playToggle.textContent = isPlaying ? 'Pause' : 'Play';
+            playToggle.classList.toggle('active', isPlaying);
+
+            if (isPlaying) {
+                scheduleNextCard();
+            } else {
+                clearTimeout(autoPlayTimer);
+            }
+        });
+
+        function scheduleNextCard() {
+            const currentDelay = speeds[currentSpeedIndex].delay;
+            autoPlayTimer = setTimeout(() => {
+                if (isPlaying) {
+                    triggerNextCard();
+                    scheduleNextCard();
+                }
+            }, currentDelay);
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                emptyState.style.display = 'none';
+            }
+
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    createCard(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            });
+            fileInput.value = '';
+        });
+
+        function createCard(imageSrc) {
+            const card = document.createElement('div');
+            card.className = `card ${currentRatio}`;
+            
+            const img = document.createElement('img');
+            img.src = imageSrc;
+            
+            card.appendChild(img);
+            stackContainer.insertBefore(card, stackContainer.firstChild);
+            
+            card.addEventListener('click', () => {
+                if (!isPlaying) triggerNextCard();
+            });
+            updateStack();
+        }
+
+        function updateStack() {
+            const cards = Array.from(stackContainer.querySelectorAll('.card'));
+            
+            cards.forEach((card, index) => {
+                card.style.zIndex = cards.length - index;
+                
+                if (index === 0) {
+                    card.style.transform = `translateY(0) scale(1)`;
+                } else {
+                    const yOffset = index * -25;
+                    const scale = Math.max(1 - (index * 0.06), 0.75);
+                    card.style.transform = `translateY(${yOffset}px) scale(${scale})`;
+                }
+            });
+        }
+
+        function triggerNextCard() {
+            if (isAnimating) return;
+            const cards = Array.from(stackContainer.querySelectorAll('.card'));
+            if (cards.length <= 1) return;
+
+            const topCard = cards[0];
+            isAnimating = true;
+
+            topCard.style.transform = `translateY(120%) scale(0.85)`;
+            topCard.style.zIndex = '0';
+
+            const durationMs = speeds[currentSpeedIndex].duration * 1000;
+
+            setTimeout(() => {
+                stackContainer.appendChild(topCard);
+                updateStack();
+                
+                setTimeout(() => {
+                    isAnimating = false;
+                }, durationMs * 0.6);
+                
+            }, durationMs * 0.4);
+        }
+    </script>
+</body>
+</html>
