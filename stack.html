@@ -11,7 +11,6 @@
             --card-shadow: 0 24px 48px rgba(0, 0, 0, 0.08);
             --control-bg: rgba(255, 255, 255, 0.85);
             --control-border: rgba(0, 0, 0, 0.05);
-            /* 우아하고 고급스러운 시네마틱 ease-in-out 곡선 */
             --transition-smooth: 0.8s cubic-bezier(0.65, 0, 0.35, 1);
             --ui-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
         }
@@ -229,9 +228,6 @@
         let isPlaying = false;
         let autoPlayTimer;
 
-        // 애니메이션 길이를 0.8초로 늘려 부드러움을 강조
-        const animationDurationMs = 800;
-
         const speeds = [
             { label: 'Normal', delay: 1800 },
             { label: 'Fast', delay: 1100 },
@@ -351,6 +347,9 @@
             const scaleStep = 0.05;
             
             cards.forEach((card, index) => {
+                card.style.transition = 'transform var(--transition-smooth), opacity var(--transition-smooth), z-index 0s';
+                
+                // DOM 순서에 철저히 기반하여 z-index를 매번 새롭게 부여합니다.
                 card.style.zIndex = cards.length - index;
                 
                 if (index < MAX_VISIBLE) {
@@ -375,19 +374,30 @@
             const topCard = cards[0];
             isAnimating = true;
 
-            topCard.style.transform = `translateY(240px) scale(0.9)`;
-            topCard.style.zIndex = '0';
-
-            // 애니메이션 진행의 정확히 절반 지점에서 카드를 스택 맨 뒤로 이동
+            // 1단계: 카메라 방향으로 튀어나오며 당겨지는 모션
+            topCard.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+            topCard.style.transform = `translateY(40px) scale(1.05)`;
+            
+            // 2단계: 화면 아래로 깊숙이 떨어지는 모션
             setTimeout(() => {
-                stackContainer.appendChild(topCard);
-                updateStack();
+                topCard.style.transition = 'transform 0.6s cubic-bezier(0.65, 0, 0.35, 1)';
+                topCard.style.transform = `translateY(400px) scale(0.85)`;
                 
+                // 3단계: 완전히 화면 밖을 벗어나는 시점에 스택의 맨 뒤로 이동 후 재정렬
                 setTimeout(() => {
-                    isAnimating = false;
-                }, animationDurationMs * 0.5);
-                
-            }, animationDurationMs * 0.5);
+                    stackContainer.appendChild(topCard);
+                    
+                    // 강제 리플로우를 통해 브라우저가 이동된 요소를 즉시 인식하게 합니다.
+                    void topCard.offsetWidth;
+                    
+                    updateStack(); 
+                    
+                    setTimeout(() => {
+                        isAnimating = false;
+                    }, 600); // 카드가 뒤쪽으로 완전히 미끄러져 올라올 때까지 대기
+                    
+                }, 400); 
+            }, 300); 
         }
     </script>
 </body>
