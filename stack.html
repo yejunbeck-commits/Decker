@@ -8,19 +8,18 @@
         :root {
             --bg-color: #FEFEFE;
             --text-color: #111111;
-            --card-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            --card-shadow: 0 24px 48px rgba(0, 0, 0, 0.08);
             --control-bg: rgba(255, 255, 255, 0.85);
             --control-border: rgba(0, 0, 0, 0.05);
-            /* 애니메이션 속도는 0.6초로 모두 동일하게 고정 */
-            --transition-smooth: 0.6s cubic-bezier(0.25, 0.1, 0.25, 1);
-            /* 배경과 확실히 분리되는 깊은 그림자 */
+            /* 우아하고 고급스러운 시네마틱 ease-in-out 곡선 */
+            --transition-smooth: 0.8s cubic-bezier(0.65, 0, 0.35, 1);
             --ui-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
         }
 
         body.dark-mode {
             --bg-color: #111111;
             --text-color: #FEFEFE;
-            --card-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            --card-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
             --control-bg: rgba(30, 30, 30, 0.85);
             --control-border: rgba(255, 255, 255, 0.1);
             --ui-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -45,7 +44,6 @@
             transition: background-color 0.5s ease;
         }
 
-        /* Controls UI */
         .controls-wrapper {
             position: fixed;
             bottom: 40px;
@@ -104,7 +102,6 @@
             margin: 0 4px;
         }
 
-        /* Hide UI Button */
         .hide-ui-btn {
             position: fixed;
             bottom: 40px;
@@ -132,22 +129,21 @@
             display: none;
         }
 
-        /* Stack Container */
         .stack-container {
             position: relative;
             width: 100%;
-            max-width: 600px;
-            height: 65vh;
+            max-width: 800px;
+            height: 75vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            perspective: 1000px;
+            perspective: 1200px;
         }
 
         .card {
             position: absolute;
-            width: 320px;
-            border-radius: 16px;
+            width: 400px;
+            border-radius: 18px;
             overflow: hidden;
             background-color: transparent;
             box-shadow: var(--card-shadow);
@@ -233,14 +229,13 @@
         let isPlaying = false;
         let autoPlayTimer;
 
-        // 고정된 애니메이션 시간 (0.6초)
-        const animationDurationMs = 600;
+        // 애니메이션 길이를 0.8초로 늘려 부드러움을 강조
+        const animationDurationMs = 800;
 
-        // delay: 애니메이션 시간(0.6초) + 화면에 머무르는 시간
         const speeds = [
-            { label: 'Normal', delay: 1600 }, // 1초 대기 + 0.6초 모션
-            { label: 'Fast', delay: 900 },    // 0.3초 대기 + 0.6초 모션
-            { label: 'Slow', delay: 2600 }    // 2초 대기 + 0.6초 모션
+            { label: 'Normal', delay: 1800 },
+            { label: 'Fast', delay: 1100 },
+            { label: 'Slow', delay: 2800 }
         ];
         let currentSpeedIndex = 0;
 
@@ -258,8 +253,15 @@
             themeToggle.textContent = document.body.classList.contains('dark-mode') ? 'Light' : 'Dark';
         });
 
-        ratio11Btn.addEventListener('click', () => setRatio('ratio-1-1', ratio11Btn, ratio169Btn));
-        ratio169Btn.addEventListener('click', () => setRatio('ratio-16-9', ratio169Btn, ratio11Btn));
+        ratio11Btn.addEventListener('click', () => {
+            setRatio('ratio-1-1', ratio11Btn, ratio169Btn);
+            updateStack();
+        });
+        
+        ratio169Btn.addEventListener('click', () => {
+            setRatio('ratio-16-9', ratio169Btn, ratio11Btn);
+            updateStack();
+        });
 
         function setRatio(ratioClass, activeBtn, inactiveBtn) {
             currentRatio = ratioClass;
@@ -315,7 +317,7 @@
                 emptyState.style.display = 'none';
             }
 
-            files.forEach(file => {
+            files.reverse().forEach(file => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     createCard(e.target.result);
@@ -345,17 +347,20 @@
             const cards = Array.from(stackContainer.querySelectorAll('.card'));
             const MAX_VISIBLE = 4;
             
+            const yOffsetStep = currentRatio === 'ratio-1-1' ? -40 : -25;
+            const scaleStep = 0.05;
+            
             cards.forEach((card, index) => {
                 card.style.zIndex = cards.length - index;
                 
                 if (index < MAX_VISIBLE) {
-                    const yOffset = index * -20;
-                    const scale = 1 - (index * 0.05);
+                    const yOffset = index * yOffsetStep;
+                    const scale = 1 - (index * scaleStep);
                     card.style.transform = `translateY(${yOffset}px) scale(${scale})`;
                     card.style.opacity = 1;
                 } else {
-                    const yOffset = MAX_VISIBLE * -20;
-                    const scale = 1 - (MAX_VISIBLE * 0.05);
+                    const yOffset = MAX_VISIBLE * yOffsetStep;
+                    const scale = 1 - (MAX_VISIBLE * scaleStep);
                     card.style.transform = `translateY(${yOffset}px) scale(${scale})`;
                     card.style.opacity = 0;
                 }
@@ -370,18 +375,19 @@
             const topCard = cards[0];
             isAnimating = true;
 
-            topCard.style.transform = `translateY(150px) scale(0.9)`;
+            topCard.style.transform = `translateY(240px) scale(0.9)`;
             topCard.style.zIndex = '0';
 
+            // 애니메이션 진행의 정확히 절반 지점에서 카드를 스택 맨 뒤로 이동
             setTimeout(() => {
                 stackContainer.appendChild(topCard);
                 updateStack();
                 
                 setTimeout(() => {
                     isAnimating = false;
-                }, animationDurationMs * 0.6);
+                }, animationDurationMs * 0.5);
                 
-            }, animationDurationMs * 0.4);
+            }, animationDurationMs * 0.5);
         }
     </script>
 </body>
