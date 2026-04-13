@@ -3,24 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Image Stack</title>
+    <title>Refined Cinematic Image Stack</title>
     <style>
         :root {
             --bg-color: #FEFEFE;
             --text-color: #111111;
             --card-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-            --control-bg: rgba(255, 255, 255, 0.8);
+            --control-bg: rgba(255, 255, 255, 0.85);
             --control-border: rgba(0, 0, 0, 0.05);
-            --transition-duration: 0.8s;
-            --transition-smooth: var(--transition-duration) cubic-bezier(0.2, 0.8, 0.2, 1);
+            /* 애니메이션 속도는 0.6초로 모두 동일하게 고정 */
+            --transition-smooth: 0.6s cubic-bezier(0.25, 0.1, 0.25, 1);
+            /* 배경과 확실히 분리되는 깊은 그림자 */
+            --ui-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
         }
 
         body.dark-mode {
             --bg-color: #111111;
             --text-color: #FEFEFE;
             --card-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-            --control-bg: rgba(30, 30, 30, 0.8);
+            --control-bg: rgba(30, 30, 30, 0.85);
             --control-border: rgba(255, 255, 255, 0.1);
+            --ui-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
         * {
@@ -42,21 +45,35 @@
             transition: background-color 0.5s ease;
         }
 
-        .controls {
+        /* Controls UI */
+        .controls-wrapper {
             position: fixed;
             bottom: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .controls-wrapper.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(20px);
+        }
+
+        .controls {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             gap: 12px;
-            z-index: 100;
             background: var(--control-bg);
             padding: 12px 24px;
             border-radius: 100px;
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--control-border);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            box-shadow: var(--ui-shadow);
         }
 
         .control-btn {
@@ -87,10 +104,35 @@
             margin: 0 4px;
         }
 
+        /* Hide UI Button */
+        .hide-ui-btn {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            background: var(--control-bg);
+            border: 1px solid var(--control-border);
+            color: var(--text-color);
+            font-size: 13px;
+            font-weight: 500;
+            padding: 12px 20px;
+            border-radius: 100px;
+            cursor: pointer;
+            z-index: 101;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: var(--ui-shadow);
+            transition: all 0.3s ease;
+        }
+
+        .hide-ui-btn:hover {
+            background: rgba(150, 150, 150, 0.1);
+        }
+
         input[type="file"] {
             display: none;
         }
 
+        /* Stack Container */
         .stack-container {
             position: relative;
             width: 100%;
@@ -107,13 +149,15 @@
             width: 320px;
             border-radius: 16px;
             overflow: hidden;
-            background-color: #fff;
+            background-color: transparent;
             box-shadow: var(--card-shadow);
-            transition: transform var(--transition-smooth), z-index 0s;
+            transition: transform var(--transition-smooth), opacity var(--transition-smooth), z-index 0s;
             cursor: pointer;
             transform-origin: bottom center;
-            will-change: transform;
-            opacity: 1; /* 투명도 제거 */
+            will-change: transform, opacity;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            transform: translateZ(0);
         }
 
         .card.ratio-1-1 {
@@ -130,6 +174,7 @@
             object-fit: cover;
             pointer-events: none;
             display: block;
+            background-color: transparent;
         }
 
         .empty-state {
@@ -148,24 +193,28 @@
         <div class="empty-state" id="emptyState">Upload images to begin</div>
     </div>
 
-    <div class="controls">
-        <label class="control-btn" for="fileInput">Upload</label>
-        <input type="file" id="fileInput" multiple accept="image/*">
-        
-        <div class="divider"></div>
+    <div class="controls-wrapper" id="controlsWrapper">
+        <div class="controls">
+            <label class="control-btn" for="fileInput">Upload</label>
+            <input type="file" id="fileInput" multiple accept="image/*">
+            
+            <div class="divider"></div>
 
-        <button class="control-btn active" id="ratio11">1:1</button>
-        <button class="control-btn" id="ratio169">16:9</button>
-        
-        <div class="divider"></div>
+            <button class="control-btn active" id="ratio11">1:1</button>
+            <button class="control-btn" id="ratio169">16:9</button>
+            
+            <div class="divider"></div>
 
-        <button class="control-btn" id="themeToggle">Dark</button>
+            <button class="control-btn" id="themeToggle">Dark</button>
 
-        <div class="divider"></div>
+            <div class="divider"></div>
 
-        <button class="control-btn" id="playToggle">Play</button>
-        <button class="control-btn" id="speedControl">CONTROLS: Normal</button>
+            <button class="control-btn" id="playToggle">Play</button>
+            <button class="control-btn" id="speedControl">CONTROLS: Normal</button>
+        </div>
     </div>
+
+    <button class="hide-ui-btn" id="hideUiToggle">Hide UI</button>
 
     <script>
         const fileInput = document.getElementById('fileInput');
@@ -176,18 +225,33 @@
         const ratio169Btn = document.getElementById('ratio169');
         const playToggle = document.getElementById('playToggle');
         const speedControl = document.getElementById('speedControl');
+        const hideUiToggle = document.getElementById('hideUiToggle');
+        const controlsWrapper = document.getElementById('controlsWrapper');
         
         let currentRatio = 'ratio-1-1';
         let isAnimating = false;
         let isPlaying = false;
         let autoPlayTimer;
 
+        // 고정된 애니메이션 시간 (0.6초)
+        const animationDurationMs = 600;
+
+        // delay: 애니메이션 시간(0.6초) + 화면에 머무르는 시간
         const speeds = [
-            { label: 'Normal', duration: 0.8, delay: 2000 },
-            { label: 'Fast', duration: 0.5, delay: 1200 },
-            { label: 'Slow', duration: 1.2, delay: 3000 }
+            { label: 'Normal', delay: 1600 }, // 1초 대기 + 0.6초 모션
+            { label: 'Fast', delay: 900 },    // 0.3초 대기 + 0.6초 모션
+            { label: 'Slow', delay: 2600 }    // 2초 대기 + 0.6초 모션
         ];
         let currentSpeedIndex = 0;
+
+        hideUiToggle.addEventListener('click', () => {
+            controlsWrapper.classList.toggle('hidden');
+            if (controlsWrapper.classList.contains('hidden')) {
+                hideUiToggle.textContent = 'Show UI';
+            } else {
+                hideUiToggle.textContent = 'Hide UI';
+            }
+        });
 
         themeToggle.addEventListener('click', () => {
             document.body.classList.toggle('dark-mode');
@@ -213,7 +277,6 @@
             const speedSettings = speeds[currentSpeedIndex];
             
             speedControl.textContent = `CONTROLS: ${speedSettings.label}`;
-            document.documentElement.style.setProperty('--transition-duration', `${speedSettings.duration}s`);
             
             if (isPlaying) {
                 clearTimeout(autoPlayTimer);
@@ -280,16 +343,21 @@
 
         function updateStack() {
             const cards = Array.from(stackContainer.querySelectorAll('.card'));
+            const MAX_VISIBLE = 4;
             
             cards.forEach((card, index) => {
                 card.style.zIndex = cards.length - index;
                 
-                if (index === 0) {
-                    card.style.transform = `translateY(0) scale(1)`;
-                } else {
-                    const yOffset = index * -25;
-                    const scale = Math.max(1 - (index * 0.06), 0.75);
+                if (index < MAX_VISIBLE) {
+                    const yOffset = index * -20;
+                    const scale = 1 - (index * 0.05);
                     card.style.transform = `translateY(${yOffset}px) scale(${scale})`;
+                    card.style.opacity = 1;
+                } else {
+                    const yOffset = MAX_VISIBLE * -20;
+                    const scale = 1 - (MAX_VISIBLE * 0.05);
+                    card.style.transform = `translateY(${yOffset}px) scale(${scale})`;
+                    card.style.opacity = 0;
                 }
             });
         }
@@ -302,10 +370,8 @@
             const topCard = cards[0];
             isAnimating = true;
 
-            topCard.style.transform = `translateY(120%) scale(0.85)`;
+            topCard.style.transform = `translateY(150px) scale(0.9)`;
             topCard.style.zIndex = '0';
-
-            const durationMs = speeds[currentSpeedIndex].duration * 1000;
 
             setTimeout(() => {
                 stackContainer.appendChild(topCard);
@@ -313,9 +379,9 @@
                 
                 setTimeout(() => {
                     isAnimating = false;
-                }, durationMs * 0.6);
+                }, animationDurationMs * 0.6);
                 
-            }, durationMs * 0.4);
+            }, animationDurationMs * 0.4);
         }
     </script>
 </body>
