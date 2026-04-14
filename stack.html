@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Refined Cinematic Image Stack</title>
+    <title>Decker</title>
     <style>
         :root {
             --bg-color: #FEFEFE;
@@ -11,7 +11,8 @@
             --card-shadow: 0 24px 48px rgba(0, 0, 0, 0.08);
             --control-bg: rgba(255, 255, 255, 0.85);
             --control-border: rgba(0, 0, 0, 0.05);
-            --transition-smooth: 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+            /* 스택이 밀려 올라오는 기본 트랜지션 속도도 0.8s에서 0.6s로 단축하여 전체적인 속도감 향상 */
+            --transition-smooth: 0.6s cubic-bezier(0.65, 0, 0.35, 1);
             --ui-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
         }
 
@@ -139,6 +140,35 @@
             perspective: 1200px;
         }
 
+        .empty-state {
+            position: absolute;
+            text-align: center;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .empty-state h1 {
+            font-size: 20px;
+            font-weight: 500;
+            letter-spacing: -0.4px;
+            opacity: 0.8;
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        .empty-state p {
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            opacity: 0.4;
+            margin: 0;
+            color: var(--text-color);
+        }
+
         .card {
             position: absolute;
             width: 400px;
@@ -171,21 +201,15 @@
             display: block;
             background-color: transparent;
         }
-
-        .empty-state {
-            position: absolute;
-            text-align: center;
-            opacity: 0.5;
-            font-size: 15px;
-            letter-spacing: -0.3px;
-            pointer-events: none;
-        }
     </style>
 </head>
 <body>
 
     <div class="stack-container" id="stackContainer">
-        <div class="empty-state" id="emptyState">Upload images to begin</div>
+        <div class="empty-state" id="emptyState">
+            <h1>Upload images to begin</h1>
+            <p>By yejunbeck.com</p>
+        </div>
     </div>
 
     <div class="controls-wrapper" id="controlsWrapper">
@@ -228,10 +252,11 @@
         let isPlaying = false;
         let autoPlayTimer;
 
+        // 새로운 애니메이션 코어 시간(약 1.15초)을 기준으로 재조정된 딜레이
         const speeds = [
-            { label: 'Normal', delay: 1800 },
-            { label: 'Fast', delay: 1100 },
-            { label: 'Slow', delay: 2800 }
+            { label: 'Normal', delay: 1800 }, // 1.2초 모션 + 0.6초 대기 (기존 Fast 속도)
+            { label: 'Fast', delay: 1200 },   // 1.2초 모션 + 0초 대기 (쉼 없이 바로 넘어감)
+            { label: 'Slow', delay: 2800 }    // 1.2초 모션 + 1.6초 대기 (기존 Normal 속도)
         ];
         let currentSpeedIndex = 0;
 
@@ -372,33 +397,33 @@
             const topCard = cards[0];
             isAnimating = true;
 
-            // 1단계: 카메라 방향으로 튀어나오며 당겨지는 모션 (0.4초)
-            topCard.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
-            topCard.style.transform = `translateY(40px) scale(1.05)`;
+            // 1단계: 카메라 방향으로 튀어나오며 당겨지는 모션 (속도 향상: 0.3초)
+            topCard.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
+            topCard.style.transform = `translateY(30px) scale(1.05)`;
             
-            // 2단계: 화면 아래로 가라앉는 모션 시작
             setTimeout(() => {
-                topCard.style.transition = 'transform 0.6s cubic-bezier(0.65, 0, 0.35, 1)';
-                topCard.style.transform = `translateY(180px) scale(0.85)`;
+                const dropY = currentRatio === 'ratio-1-1' ? 260 : 180;
+
+                // 2단계: 화면 아래로 가라앉는 모션 (속도 향상: 0.45초)
+                topCard.style.transition = 'transform 0.45s cubic-bezier(0.65, 0, 0.35, 1)';
+                topCard.style.transform = `translateY(${dropY}px) scale(0.85)`;
                 
-                // 3단계: 하강 모션(0.6초)이 '완전히' 종료된 직후에만 뒤로 이동 처리
                 setTimeout(() => {
+                    // 3단계: 스택 뒤로 안착 및 재정렬
                     topCard.style.zIndex = '-1';
                     stackContainer.appendChild(topCard);
                     
-                    // 강제 리플로우를 통해 상태를 브라우저에 각인
                     void topCard.offsetWidth;
                     
-                    // 스택을 업데이트하여 카드가 자연스럽게 스르륵 올라가도록 배치
                     updateStack(); 
                     
-                    // 부드러운 전환이 끝날 때까지 대기 후 애니메이션 락 해제
+                    // 재정렬이 끝나고 모션 락을 푸는 시간 단축 (0.5초)
                     setTimeout(() => {
                         isAnimating = false;
-                    }, 800); 
+                    }, 500); 
                     
-                }, 600); // 이전 400ms에서 600ms로 수정하여 간섭 완전 차단
-            }, 300); 
+                }, 450); // 하강 모션 0.45초 후 실행
+            }, 200); // 튀어나오는 모션 0.2초 후 하강 시작
         }
     </script>
 </body>
