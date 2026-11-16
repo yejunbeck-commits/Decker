@@ -58,12 +58,12 @@
             transition: background-color 0.5s ease;
         }
 
-        /* 상단 및 하단 배경색 그라데이션 페이드 */
+        /* 상단 및 하단 배경색 그라데이션 페이드 (바깥쪽 카드들이 자연스럽게 묻히도록 깊이감 조정) */
         .fade-overlay {
             position: fixed;
             left: 0;
             width: 100%;
-            height: 22vh;
+            height: 28vh;
             pointer-events: none;
             z-index: 20;
             transition: background 0.5s ease;
@@ -73,7 +73,8 @@
             top: 0;
             background: linear-gradient(
                 to bottom,
-                rgba(var(--bg-rgb), 1) 15%,
+                rgba(var(--bg-rgb), 1) 20%,
+                rgba(var(--bg-rgb), 0.7) 55%,
                 rgba(var(--bg-rgb), 0) 100%
             );
         }
@@ -82,7 +83,8 @@
             bottom: 0;
             background: linear-gradient(
                 to top,
-                rgba(var(--bg-rgb), 1) 15%,
+                rgba(var(--bg-rgb), 1) 20%,
+                rgba(var(--bg-rgb), 0.7) 55%,
                 rgba(var(--bg-rgb), 0) 100%
             );
         }
@@ -234,12 +236,12 @@
         }
 
         .card.ratio-1-1 {
-            width: 380px;
+            width: 340px;
             aspect-ratio: 1 / 1;
         }
 
         .card.ratio-16-9 {
-            width: 540px;
+            width: 500px;
             aspect-ratio: 16 / 9;
         }
 
@@ -252,49 +254,12 @@
             background-color: transparent;
         }
 
-        /* 우측 다음 이동 버튼 */
-        .nav-next-btn {
-            position: fixed;
-            right: 40px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            border: 1px solid var(--control-border);
-            background: var(--control-bg);
-            color: var(--text-color);
-            box-shadow: var(--ui-shadow);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 30;
-            transition: transform 0.2s ease, opacity 0.3s ease;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .nav-next-btn.visible {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .nav-next-btn:hover {
-            transform: translateY(-50%) scale(1.06);
-        }
-
         @media (max-width: 768px) {
             .card.ratio-1-1 {
-                width: 72vw;
+                width: 68vw;
             }
             .card.ratio-16-9 {
-                width: 84vw;
-            }
-            .nav-next-btn {
-                right: 16px;
+                width: 82vw;
             }
         }
     </style>
@@ -311,12 +276,6 @@
             <p>By yejunbeck.com</p>
         </div>
     </div>
-
-    <button class="nav-next-btn" id="nextBtn" aria-label="Next image">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"></polyline>
-        </svg>
-    </button>
 
     <div class="controls-wrapper" id="controlsWrapper">
         <div class="controls">
@@ -352,7 +311,6 @@
         const speedControl = document.getElementById('speedControl');
         const hideUiToggle = document.getElementById('hideUiToggle');
         const controlsWrapper = document.getElementById('controlsWrapper');
-        const nextBtn = document.getElementById('nextBtn');
 
         let currentRatio = 'ratio-1-1';
         let isAnimating = false;
@@ -439,11 +397,7 @@
             }, currentDelay);
         }
 
-        nextBtn.addEventListener('click', () => {
-            if (!isPlaying) triggerNextCard();
-        });
-
-        // 마우스 휠 스크롤로도 위아래 이동 지원
+        // 마우스 휠 스크롤로 위아래 이동 지원
         let wheelTimeout;
         window.addEventListener('wheel', (e) => {
             if (isPlaying || isAnimating) return;
@@ -466,18 +420,10 @@
                 emptyState.style.display = 'none';
             }
 
-            let loadedCount = 0;
             files.forEach(file => {
                 const reader = new FileReader();
                 reader.onload = (ev) => {
                     createCard(ev.target.result);
-                    loadedCount++;
-                    if (loadedCount === files.length) {
-                        const totalCards = stackContainer.querySelectorAll('.card').length;
-                        if (totalCards > 1) {
-                            nextBtn.classList.add('visible');
-                        }
-                    }
                 };
                 reader.readAsDataURL(file);
             });
@@ -514,15 +460,16 @@
             const total = cards.length;
             if (total === 0) return;
 
-            // 정중앙 카드(1.0)와 상하단 작은 카드(0.6)의 크기 및 간격 설정
+            // 중앙 카드(1.0)와 나머지 4장(위 2장, 아래 2장)의 동일한 축소 규격(0.54)
             const centerScale = 1;
-            const sideScale = 0.6;
-            const yGap = currentRatio === 'ratio-1-1' ? 325 : 265;
+            const sideScale = 0.54;
+            const firstOffset = currentRatio === 'ratio-1-1' ? 280 : 235;
+            const stepOffset = currentRatio === 'ratio-1-1' ? 205 : 175;
 
             cards.forEach((card, index) => {
-                // 순환 거리 계산 (-1: 바로 위, 0: 정중앙, +1: 바로 아래)
+                // 5장(-2, -1, 0, +1, +2) 기준 순환 거리 계산
                 let diff = index - activeIndex;
-                if (total > 2) {
+                if (total > 4) {
                     if (diff > total / 2) diff -= total;
                     if (diff < -total / 2) diff += total;
                 }
@@ -535,15 +482,23 @@
                     card.style.opacity = 1;
                     card.style.pointerEvents = 'auto';
                 } else if (Math.abs(diff) === 1) {
-                    const yOffset = diff * yGap;
-                    card.style.zIndex = 5;
+                    const sign = diff > 0 ? 1 : -1;
+                    const yOffset = sign * firstOffset;
+                    card.style.zIndex = 6;
                     card.style.transform = `translateY(${yOffset}px) scale(${sideScale})`;
-                    card.style.opacity = 0.92;
+                    card.style.opacity = 0.95;
+                    card.style.pointerEvents = 'auto';
+                } else if (Math.abs(diff) === 2) {
+                    // 4번째, 5번째 카드가 상하단 그라데이션 영역에 걸쳐 자연스럽게 페이드되도록 배치
+                    const sign = diff > 0 ? 1 : -1;
+                    const yOffset = sign * (firstOffset + stepOffset);
+                    card.style.zIndex = 4;
+                    card.style.transform = `translateY(${yOffset}px) scale(${sideScale})`;
+                    card.style.opacity = 0.95;
                     card.style.pointerEvents = 'auto';
                 } else {
-                    // 화면 위아래 그라데이션 바깥으로 자연스럽게 대기
-                    const direction = diff > 0 ? 1 : -1;
-                    const yOffset = direction * (yGap * 1.9);
+                    const sign = diff > 0 ? 1 : -1;
+                    const yOffset = sign * (firstOffset + stepOffset * 2);
                     card.style.zIndex = 1;
                     card.style.transform = `translateY(${yOffset}px) scale(${sideScale})`;
                     card.style.opacity = 0;
