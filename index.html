@@ -18,19 +18,22 @@
     <style>
         :root {
             --bg-color: #FEFEFE;
+            --bg-rgb: 254, 254, 254;
             --text-color: #111111;
             --card-shadow: 0 24px 48px rgba(0, 0, 0, 0.08);
+            --card-shadow-inactive: 0 8px 24px rgba(0, 0, 0, 0.04);
             --control-bg: rgba(255, 255, 255, 0.85);
             --control-border: rgba(0, 0, 0, 0.05);
-            /* 스택이 밀려 올라오는 기본 트랜지션 속도도 0.8s에서 0.6s로 단축하여 전체적인 속도감 향상 */
-            --transition-smooth: 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+            --transition-smooth: 0.6s cubic-bezier(0.22, 1, 0.36, 1);
             --ui-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
         }
 
         body.dark-mode {
             --bg-color: #111111;
+            --bg-rgb: 17, 17, 17;
             --text-color: #FEFEFE;
             --card-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+            --card-shadow-inactive: 0 8px 24px rgba(0, 0, 0, 0.3);
             --control-bg: rgba(30, 30, 30, 0.85);
             --control-border: rgba(255, 255, 255, 0.1);
             --ui-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -53,6 +56,35 @@
             justify-content: center;
             overflow: hidden;
             transition: background-color 0.5s ease;
+        }
+
+        /* 상단 및 하단 배경색 그라데이션 페이드 */
+        .fade-overlay {
+            position: fixed;
+            left: 0;
+            width: 100%;
+            height: 22vh;
+            pointer-events: none;
+            z-index: 20;
+            transition: background 0.5s ease;
+        }
+
+        .fade-top {
+            top: 0;
+            background: linear-gradient(
+                to bottom,
+                rgba(var(--bg-rgb), 1) 15%,
+                rgba(var(--bg-rgb), 0) 100%
+            );
+        }
+
+        .fade-bottom {
+            bottom: 0;
+            background: linear-gradient(
+                to top,
+                rgba(var(--bg-rgb), 1) 15%,
+                rgba(var(--bg-rgb), 0) 100%
+            );
         }
 
         .controls-wrapper {
@@ -140,15 +172,15 @@
             display: none;
         }
 
+        /* 세로 캐러셀 컨테이너 */
         .stack-container {
             position: relative;
             width: 100%;
-            max-width: 800px;
-            height: 75vh;
+            height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            perspective: 1200px;
+            overflow: hidden;
         }
 
         .empty-state {
@@ -159,6 +191,7 @@
             flex-direction: column;
             align-items: center;
             gap: 12px;
+            z-index: 10;
         }
 
         .empty-state h1 {
@@ -180,27 +213,33 @@
             color: var(--text-color);
         }
 
+        /* 카드 기본 스타일 */
         .card {
             position: absolute;
-            width: 400px;
+            width: 480px;
             border-radius: 18px;
             overflow: hidden;
             background-color: transparent;
-            box-shadow: var(--card-shadow);
-            transition: transform var(--transition-smooth), opacity var(--transition-smooth), z-index 0s;
+            box-shadow: var(--card-shadow-inactive);
+            transition: transform var(--transition-smooth), opacity var(--transition-smooth), box-shadow var(--transition-smooth);
             cursor: pointer;
-            transform-origin: bottom center;
+            transform-origin: center center;
             will-change: transform, opacity;
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
-            transform: translateZ(0);
+        }
+
+        .card.is-center {
+            box-shadow: var(--card-shadow);
         }
 
         .card.ratio-1-1 {
+            width: 380px;
             aspect-ratio: 1 / 1;
         }
 
         .card.ratio-16-9 {
+            width: 540px;
             aspect-ratio: 16 / 9;
         }
 
@@ -212,10 +251,59 @@
             display: block;
             background-color: transparent;
         }
+
+        /* 우측 다음 이동 버튼 */
+        .nav-next-btn {
+            position: fixed;
+            right: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1px solid var(--control-border);
+            background: var(--control-bg);
+            color: var(--text-color);
+            box-shadow: var(--ui-shadow);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 30;
+            transition: transform 0.2s ease, opacity 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .nav-next-btn.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .nav-next-btn:hover {
+            transform: translateY(-50%) scale(1.06);
+        }
+
+        @media (max-width: 768px) {
+            .card.ratio-1-1 {
+                width: 72vw;
+            }
+            .card.ratio-16-9 {
+                width: 84vw;
+            }
+            .nav-next-btn {
+                right: 16px;
+            }
+        }
     </style>
 </head>
 
 <body>
+
+    <div class="fade-overlay fade-top"></div>
+    <div class="fade-overlay fade-bottom"></div>
 
     <div class="stack-container" id="stackContainer">
         <div class="empty-state" id="emptyState">
@@ -223,6 +311,12 @@
             <p>By yejunbeck.com</p>
         </div>
     </div>
+
+    <button class="nav-next-btn" id="nextBtn" aria-label="Next image">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+    </button>
 
     <div class="controls-wrapper" id="controlsWrapper">
         <div class="controls">
@@ -258,17 +352,18 @@
         const speedControl = document.getElementById('speedControl');
         const hideUiToggle = document.getElementById('hideUiToggle');
         const controlsWrapper = document.getElementById('controlsWrapper');
+        const nextBtn = document.getElementById('nextBtn');
 
         let currentRatio = 'ratio-1-1';
         let isAnimating = false;
         let isPlaying = false;
         let autoPlayTimer;
+        let activeIndex = 0;
 
-        // 새로운 애니메이션 코어 시간(약 1.15초)을 기준으로 재조정된 딜레이
         const speeds = [
-            { label: 'Normal', delay: 1800 }, // 1.2초 모션 + 0.6초 대기 (기존 Fast 속도)
-            { label: 'Fast', delay: 1200 },   // 1.2초 모션 + 0초 대기 (쉼 없이 바로 넘어감)
-            { label: 'Slow', delay: 2800 }    // 1.2초 모션 + 1.6초 대기 (기존 Normal 속도)
+            { label: 'Normal', delay: 1800 },
+            { label: 'Fast', delay: 1200 },
+            { label: 'Slow', delay: 2800 }
         ];
         let currentSpeedIndex = 0;
 
@@ -344,16 +439,45 @@
             }, currentDelay);
         }
 
+        nextBtn.addEventListener('click', () => {
+            if (!isPlaying) triggerNextCard();
+        });
+
+        // 마우스 휠 스크롤로도 위아래 이동 지원
+        let wheelTimeout;
+        window.addEventListener('wheel', (e) => {
+            if (isPlaying || isAnimating) return;
+            const cards = document.querySelectorAll('.card');
+            if (cards.length <= 1) return;
+
+            clearTimeout(wheelTimeout);
+            wheelTimeout = setTimeout(() => {
+                if (e.deltaY > 15) {
+                    triggerNextCard();
+                } else if (e.deltaY < -15) {
+                    triggerPrevCard();
+                }
+            }, 40);
+        }, { passive: true });
+
         fileInput.addEventListener('change', (e) => {
             const files = Array.from(e.target.files);
             if (files.length > 0) {
                 emptyState.style.display = 'none';
             }
 
-            files.reverse().forEach(file => {
+            let loadedCount = 0;
+            files.forEach(file => {
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    createCard(e.target.result);
+                reader.onload = (ev) => {
+                    createCard(ev.target.result);
+                    loadedCount++;
+                    if (loadedCount === files.length) {
+                        const totalCards = stackContainer.querySelectorAll('.card').length;
+                        if (totalCards > 1) {
+                            nextBtn.classList.add('visible');
+                        }
+                    }
                 };
                 reader.readAsDataURL(file);
             });
@@ -368,35 +492,62 @@
             img.src = imageSrc;
 
             card.appendChild(img);
-            stackContainer.insertBefore(card, stackContainer.firstChild);
+            stackContainer.appendChild(card);
 
             card.addEventListener('click', () => {
-                if (!isPlaying) triggerNextCard();
+                if (isPlaying) return;
+                const cards = Array.from(stackContainer.querySelectorAll('.card'));
+                const clickedIndex = cards.indexOf(card);
+                if (clickedIndex !== activeIndex) {
+                    activeIndex = clickedIndex;
+                    updateStack();
+                } else {
+                    triggerNextCard();
+                }
             });
+
             updateStack();
         }
 
         function updateStack() {
             const cards = Array.from(stackContainer.querySelectorAll('.card'));
-            const MAX_VISIBLE = 4;
+            const total = cards.length;
+            if (total === 0) return;
 
-            const yOffsetStep = currentRatio === 'ratio-1-1' ? -40 : -25;
-            const scaleStep = 0.05;
+            // 정중앙 카드(1.0)와 상하단 작은 카드(0.6)의 크기 및 간격 설정
+            const centerScale = 1;
+            const sideScale = 0.6;
+            const yGap = currentRatio === 'ratio-1-1' ? 325 : 265;
 
             cards.forEach((card, index) => {
-                card.style.transition = 'transform var(--transition-smooth), opacity var(--transition-smooth), z-index 0s';
-                card.style.zIndex = cards.length - index;
+                // 순환 거리 계산 (-1: 바로 위, 0: 정중앙, +1: 바로 아래)
+                let diff = index - activeIndex;
+                if (total > 2) {
+                    if (diff > total / 2) diff -= total;
+                    if (diff < -total / 2) diff += total;
+                }
 
-                if (index < MAX_VISIBLE) {
-                    const yOffset = index * yOffsetStep;
-                    const scale = 1 - (index * scaleStep);
-                    card.style.transform = `translateY(${yOffset}px) scale(${scale})`;
+                card.classList.toggle('is-center', diff === 0);
+
+                if (diff === 0) {
+                    card.style.zIndex = 10;
+                    card.style.transform = `translateY(0px) scale(${centerScale})`;
                     card.style.opacity = 1;
+                    card.style.pointerEvents = 'auto';
+                } else if (Math.abs(diff) === 1) {
+                    const yOffset = diff * yGap;
+                    card.style.zIndex = 5;
+                    card.style.transform = `translateY(${yOffset}px) scale(${sideScale})`;
+                    card.style.opacity = 0.92;
+                    card.style.pointerEvents = 'auto';
                 } else {
-                    const yOffset = MAX_VISIBLE * yOffsetStep;
-                    const scale = 1 - (MAX_VISIBLE * scaleStep);
-                    card.style.transform = `translateY(${yOffset}px) scale(${scale})`;
+                    // 화면 위아래 그라데이션 바깥으로 자연스럽게 대기
+                    const direction = diff > 0 ? 1 : -1;
+                    const yOffset = direction * (yGap * 1.9);
+                    card.style.zIndex = 1;
+                    card.style.transform = `translateY(${yOffset}px) scale(${sideScale})`;
                     card.style.opacity = 0;
+                    card.style.pointerEvents = 'none';
                 }
             });
         }
@@ -406,36 +557,27 @@
             const cards = Array.from(stackContainer.querySelectorAll('.card'));
             if (cards.length <= 1) return;
 
-            const topCard = cards[0];
             isAnimating = true;
-
-            // 1단계: 카메라 방향으로 튀어나오며 당겨지는 모션 (속도 향상: 0.3초)
-            topCard.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
-            topCard.style.transform = `translateY(30px) scale(1.05)`;
+            activeIndex = (activeIndex + 1) % cards.length;
+            updateStack();
 
             setTimeout(() => {
-                const dropY = currentRatio === 'ratio-1-1' ? 260 : 180;
+                isAnimating = false;
+            }, 550);
+        }
 
-                // 2단계: 화면 아래로 가라앉는 모션 (속도 향상: 0.45초)
-                topCard.style.transition = 'transform 0.45s cubic-bezier(0.65, 0, 0.35, 1)';
-                topCard.style.transform = `translateY(${dropY}px) scale(0.85)`;
+        function triggerPrevCard() {
+            if (isAnimating) return;
+            const cards = Array.from(stackContainer.querySelectorAll('.card'));
+            if (cards.length <= 1) return;
 
-                setTimeout(() => {
-                    // 3단계: 스택 뒤로 안착 및 재정렬
-                    topCard.style.zIndex = '-1';
-                    stackContainer.appendChild(topCard);
+            isAnimating = true;
+            activeIndex = (activeIndex - 1 + cards.length) % cards.length;
+            updateStack();
 
-                    void topCard.offsetWidth;
-
-                    updateStack();
-
-                    // 재정렬이 끝나고 모션 락을 푸는 시간 단축 (0.5초)
-                    setTimeout(() => {
-                        isAnimating = false;
-                    }, 500);
-
-                }, 450); // 하강 모션 0.45초 후 실행
-            }, 200); // 튀어나오는 모션 0.2초 후 하강 시작
+            setTimeout(() => {
+                isAnimating = false;
+            }, 550);
         }
     </script>
 </body>
