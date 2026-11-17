@@ -17,7 +17,7 @@ let activeIndex = 0;
 
 const speeds = [
     { label: 'Normal', delay: 1800 },
-    { label: 'Fast', delay: 1200 },
+    { label: 'Fast', delay: 560 },
     { label: 'Slow', delay: 2800 }
 ];
 let currentSpeedIndex = 0;
@@ -78,6 +78,7 @@ playToggle.addEventListener('click', () => {
     playToggle.classList.toggle('active', isPlaying);
 
     if (isPlaying) {
+        triggerNextCard();
         scheduleNextCard();
     } else {
         clearTimeout(autoPlayTimer);
@@ -94,7 +95,6 @@ function scheduleNextCard() {
     }, currentDelay);
 }
 
-// 마우스 휠 스크롤로 위아래 이동 지원
 let wheelTimeout;
 window.addEventListener('wheel', (e) => {
     if (isPlaying || isAnimating) return;
@@ -163,7 +163,6 @@ function updateStack() {
     const stepOffset = currentRatio === 'ratio-1-1' ? 236 : 208;
 
     cards.forEach((card, index) => {
-        // 5장(-2, -1, 0, +1, +2) 기준 순환 거리 계산
         let diff = index - activeIndex;
         if (total > 4) {
             if (diff > total / 2) diff -= total;
