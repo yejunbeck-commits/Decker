@@ -39,6 +39,8 @@ body {
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
     transition: background-color 0.5s ease;
 }
 
@@ -208,7 +210,6 @@ input[type="file"] {
     background-color: transparent;
     box-shadow: var(--card-shadow-inactive);
     transition: transform var(--transition-smooth), opacity var(--transition-smooth), box-shadow var(--transition-smooth);
-    cursor: pointer;
     transform-origin: center center;
     will-change: transform, opacity;
     -webkit-backface-visibility: hidden;

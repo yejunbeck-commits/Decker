@@ -70,6 +70,10 @@ speedControl.addEventListener('click', () => {
 });
 
 playToggle.addEventListener('click', () => {
+    togglePlay();
+});
+
+function togglePlay() {
     const cards = document.querySelectorAll('.card');
     if (cards.length <= 1) return;
 
@@ -83,7 +87,7 @@ playToggle.addEventListener('click', () => {
     } else {
         clearTimeout(autoPlayTimer);
     }
-});
+}
 
 function scheduleNextCard() {
     const currentDelay = speeds[currentSpeedIndex].delay;
@@ -95,21 +99,26 @@ function scheduleNextCard() {
     }, currentDelay);
 }
 
-let wheelTimeout;
-window.addEventListener('wheel', (e) => {
+// 키보드 조작 이벤트
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        e.preventDefault();
+        togglePlay();
+        return;
+    }
+
     if (isPlaying || isAnimating) return;
     const cards = document.querySelectorAll('.card');
     if (cards.length <= 1) return;
 
-    clearTimeout(wheelTimeout);
-    wheelTimeout = setTimeout(() => {
-        if (e.deltaY > 15) {
-            triggerNextCard();
-        } else if (e.deltaY < -15) {
-            triggerPrevCard();
-        }
-    }, 40);
-}, { passive: true });
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        triggerNextCard();
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        triggerPrevCard();
+    }
+});
 
 fileInput.addEventListener('change', (e) => {
     const files = Array.from(e.target.files);
@@ -133,21 +142,10 @@ function createCard(imageSrc) {
 
     const img = document.createElement('img');
     img.src = imageSrc;
+    img.draggable = false;
 
     card.appendChild(img);
     stackContainer.appendChild(card);
-
-    card.addEventListener('click', () => {
-        if (isPlaying) return;
-        const cards = Array.from(stackContainer.querySelectorAll('.card'));
-        const clickedIndex = cards.indexOf(card);
-        if (clickedIndex !== activeIndex) {
-            activeIndex = clickedIndex;
-            updateStack();
-        } else {
-            triggerNextCard();
-        }
-    });
 
     updateStack();
 }
