@@ -147,6 +147,23 @@ function createCard(imageSrc) {
     card.appendChild(img);
     stackContainer.appendChild(card);
 
+    // 마우스 클릭 조작 (중앙 카드 클릭 시 다음 카드, 주변 카드 클릭 시 해당 카드로 이동)
+    card.addEventListener('click', () => {
+        if (isPlaying || isAnimating) return;
+        const cards = Array.from(stackContainer.querySelectorAll('.card'));
+        const clickedIndex = cards.indexOf(card);
+        if (clickedIndex !== activeIndex) {
+            isAnimating = true;
+            activeIndex = clickedIndex;
+            updateStack();
+            setTimeout(() => {
+                isAnimating = false;
+            }, 550);
+        } else {
+            triggerNextCard();
+        }
+    });
+
     updateStack();
 }
 
