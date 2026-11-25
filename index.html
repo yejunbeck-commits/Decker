@@ -48,12 +48,65 @@
 
             <button class="control-btn" id="playToggle">Play</button>
             <button class="control-btn" id="speedControl">CONTROLS: Normal</button>
+
+            <div class="divider"></div>
+
+            <button class="control-btn" id="exportBtn">Export</button>
         </div>
     </div>
 
     <button class="hide-ui-btn" id="hideUiToggle">Hide UI</button>
 
+        <div class="export-modal" id="exportModal">
+        <div class="export-panel" role="dialog" aria-labelledby="exportTitle">
+            <div class="export-head">
+                <h2 id="exportTitle">Export video</h2>
+                <button class="export-x" id="exportCloseX" aria-label="Close">&times;</button>
+            </div>
+
+            <div class="export-row">
+                <span>Resolution</span>
+                <div class="seg" data-key="res">
+                    <button class="on" data-value="720p">720p</button>
+                    <button data-value="1080p">1080p</button>
+                    <button data-value="2K">2K</button>
+                    <button data-value="4K">4K</button>
+                </div>
+            </div>
+            <div class="export-row">
+                <span>Frame rate</span>
+                <div class="seg" data-key="fps">
+                    <button class="on" data-value="30">30 fps</button>
+                    <button data-value="60">60 fps</button>
+                </div>
+            </div>
+            <div class="export-row">
+                <span>Loops</span>
+                <div class="seg" data-key="loops">
+                    <button class="on" data-value="1">1&times;</button>
+                    <button data-value="2">2&times;</button>
+                    <button data-value="3">3&times;</button>
+                    <button data-value="4">4&times;</button>
+                </div>
+            </div>
+
+            <div class="export-info" id="exportInfo">720×720 · 0.0s · 8 Mbps · ~0 MB max</div>
+
+            <div class="export-progress" id="exportProgress" hidden>
+                <div class="export-track"><div class="export-bar" id="exportProgressBar"></div></div>
+                <div class="export-progress-text" id="exportProgressText"></div>
+            </div>
+
+            <div class="export-actions">
+                <button class="export-ghost" id="exportClose">Close</button>
+                <button class="export-primary" id="exportStart">Export MP4</button>
+            </div>
+        </div>
+    </div>
+
+
     <script src="script.js"></script>
+    <script src="export.js"></script>
 </body>
 
 </html>

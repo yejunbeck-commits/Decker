@@ -247,3 +247,127 @@ input[type="file"] {
         width: 82vw;
     }
 }
+
+/* ================= Export modal ================= */
+:root {
+    --modal-panel: rgba(255, 255, 255, 0.92);
+    --modal-border: rgba(0, 0, 0, 0.06);
+    --modal-muted: rgba(17, 17, 17, 0.5);
+    --modal-chip: rgba(17, 17, 17, 0.05);
+    --modal-chip-hover: rgba(17, 17, 17, 0.1);
+    --modal-backdrop: rgba(254, 254, 254, 0.4);
+}
+
+body.dark-mode {
+    --modal-panel: rgba(24, 24, 24, 0.92);
+    --modal-border: rgba(255, 255, 255, 0.08);
+    --modal-muted: rgba(254, 254, 254, 0.5);
+    --modal-chip: rgba(254, 254, 254, 0.06);
+    --modal-chip-hover: rgba(254, 254, 254, 0.12);
+    --modal-backdrop: rgba(17, 17, 17, 0.4);
+}
+
+.export-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--modal-backdrop);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+.export-modal.open { opacity: 1; pointer-events: auto; }
+
+.export-panel {
+    width: min(380px, calc(100vw - 32px));
+    background: var(--modal-panel);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--modal-border);
+    border-radius: 20px;
+    padding: 24px 22px 20px;
+    color: var(--text-color);
+    box-shadow: var(--ui-shadow);
+    transform: translateY(8px) scale(0.98);
+    transition: transform 0.3s var(--transition-easing);
+    font-size: 12px;
+}
+.export-modal.open .export-panel { transform: none; }
+
+.export-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+.export-head h2 { font-size: 14px; font-weight: 600; letter-spacing: -0.2px; }
+.export-x {
+    background: none; border: none; color: var(--modal-muted);
+    font-size: 22px; line-height: 1; cursor: pointer;
+    transition: color 0.2s ease;
+}
+.export-x:hover { color: var(--text-color); }
+
+.export-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.export-row > span { color: var(--modal-muted); white-space: nowrap; }
+
+.seg { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.seg button {
+    background: var(--modal-chip);
+    border: none;
+    color: var(--text-color);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 7px 12px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+.seg button:hover { background: var(--modal-chip-hover); }
+.seg button.on { background: var(--text-color); color: var(--bg-color); }
+
+.export-info {
+    background: var(--modal-chip);
+    border-radius: 12px;
+    padding: 12px 14px;
+    color: var(--modal-muted);
+    font-size: 11px;
+    margin: 20px 0 16px;
+    font-variant-numeric: tabular-nums;
+}
+
+.export-progress { margin-bottom: 16px; }
+.export-track {
+    height: 3px; border-radius: 3px;
+    background: var(--modal-chip-hover); overflow: hidden;
+}
+.export-bar { height: 100%; width: 0; background: var(--text-color); transition: width 0.15s linear; }
+.export-progress-text { margin-top: 8px; color: var(--modal-muted); font-size: 11px; }
+
+.export-actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
+.export-ghost {
+    background: none; border: none; color: var(--modal-muted);
+    font-size: 13px; font-weight: 500; padding: 10px 16px; cursor: pointer; border-radius: 50px;
+    transition: color 0.2s ease;
+}
+.export-ghost:hover { color: var(--text-color); }
+.export-primary {
+    background: var(--text-color); color: var(--bg-color); border: none;
+    font-size: 13px; font-weight: 600;
+    padding: 10px 20px; border-radius: 50px; cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+.export-primary:hover { opacity: 0.85; }
+.export-primary:disabled { opacity: 0.4; cursor: default; }
+.export-modal.busy .seg button { opacity: 0.4; cursor: default; }
