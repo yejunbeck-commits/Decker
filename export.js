@@ -19,10 +19,18 @@
         '2K': { short: 1440, mbps: 20 },
         '4K': { short: 2160, mbps: 40 },
     };
-    const settings = { res: '720p', fps: 30, loops: 1 };
+    const RATIOS = { '1:1': [1, 1], '4:5': [4, 5], '9:16': [9, 16], '16:9': [16, 9] };
+    const settings = { ratio: '1:1', res: '720p', fps: 30, loops: 1 };
+    let ratioPicked = false;
 
     let cancelled = false;
     let exporting = false;
+
+    function syncSeg(key, value) {
+        const group = modal.querySelector(`.seg[data-key="${key}"]`);
+        if (!group) return;
+        group.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.value === String(value)));
+    }
 
     modal.querySelectorAll('.seg').forEach(group => {
         const key = group.dataset.key;
@@ -33,6 +41,7 @@
                 btn.classList.add('on');
                 const v = btn.dataset.value;
                 settings[key] = (key === 'fps' || key === 'loops') ? Number(v) : v;
+                if (key === 'ratio') ratioPicked = true;
                 updateInfo();
             });
         });
@@ -44,11 +53,12 @@
 
     function getDims() {
         const short = RES[settings.res].short;
-        const wide = currentRatio === 'ratio-16-9';
-        let w = wide ? Math.round(short * 16 / 9) : short;
-        let h = short;
+        const [rw, rh] = RATIOS[settings.ratio];
+        let w, h;
+        if (rw >= rh) { h = short; w = Math.round(short * rw / rh); }
+        else { w = short; h = Math.round(short * rh / rw); }
         w += w % 2; h += h % 2;
-        return { w, h, wide };
+        return { w, h, wide: currentRatio === 'ratio-16-9' };   // wide = card shape
     }
 
     function getDurationMs() {
@@ -69,6 +79,10 @@
             return;
         }
         if (isPlaying) togglePlay();
+        if (!ratioPicked) {
+            settings.ratio = currentRatio === 'ratio-16-9' ? '16:9' : '1:1';
+            syncSeg('ratio', settings.ratio);
+        }
         updateInfo();
         progressWrap.hidden = true;
         modal.classList.add('open');
@@ -146,7 +160,7 @@
     }
 
     function renderFrame(ctx, W, H, imgs, activePos, wide, dark) {
-        const s = H / 1000;   // logical stage height: 1000px
+        const s = Math.min(H / 1000, W / 600);   // fit tall frames by height, cap by width
         const total = imgs.length;
         const bg = dark ? [17, 17, 17] : [254, 254, 254];
         const c = bg.join(',');
@@ -244,7 +258,7 @@
 
         const config = await pickConfig(W, H, fps, bitrate);
         if (!config) {
-            alert(`${settings.res} export is not supported on this device. Please choose a lower resolution.`);
+            alert(`${settings.res} ${settings.ratio} export is not supported on this device. Please choose a lower resolution.`);
             return;
         }
 
